@@ -1,0 +1,260 @@
+-- ==========================================
+-- 1. BASE ENTITIES & SUPERCLASSES
+-- ==========================================
+
+-- PERSON (Superclass)
+CREATE TABLE PERSON (
+    Personal_ID INT PRIMARY KEY,
+    FirstName VARCHAR(50),
+    LastName VARCHAR(50),
+    Age INT,
+    Gender VARCHAR(10),
+    PhoneNumber VARCHAR(20),
+    email	VARCHAR(100),
+    -- Composite Attribute: Address
+    AddLine1 VARCHAR(100),
+    AddLine2 VARCHAR(100),
+    City VARCHAR(50),
+    State VARCHAR(50),
+    Zip VARCHAR(20)
+);
+
+CREATE INDEX idx_person_name ON PERSON(LastName, FirstName);
+
+-- DEPARTMENT
+CREATE TABLE DEPARTMENT (
+    Dept_Id INT PRIMARY KEY,
+    Dept_Name VARCHAR(100) NOT NULL,
+    StartTime TIME,
+    EndTime TIME
+);
+
+-- VENDOR
+CREATE TABLE VENDOR (
+    VendorID INT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    Address VARCHAR(255),
+    AcctNumber VARCHAR(50),
+    CreditRating VARCHAR(20),
+    PurchasingWebServURL VARCHAR(255)
+);
+
+-- PART (Updated with VendorID attribute)
+CREATE TABLE PART (
+    VendorID INT PRIMARY KEY,
+    Price DECIMAL(10, 2)
+);
+
+-- PRODUCT
+CREATE TABLE PRODUCT (
+    ProductID INT PRIMARY KEY,
+    ProductType VARCHAR(50),
+    ListPrice DECIMAL(10, 2),
+    Size VARCHAR(20),
+    Weight DECIMAL(8, 2),
+    Style VARCHAR(50),
+    PartType VARCHAR(50),
+    Qty INT
+);
+
+CREATE INDEX idx_product_type ON PRODUCT(ProductType);
+
+-- MARKETING SITE
+CREATE TABLE MARKETING_SITE (
+    SiteID INT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    Location VARCHAR(255)
+);
+
+
+-- ==========================================
+-- 2. PERSON SUBCLASSES (Overlapping Hierarchy)
+-- ==========================================
+
+-- EMPLOYEE (Subclass of PERSON)
+CREATE TABLE EMPLOYEE (
+    Personal_ID INT PRIMARY KEY,
+    Rank VARCHAR(50),
+    Title VARCHAR(50),
+    Dept_Id INT,
+    Supervisor_ID INT,
+    FOREIGN KEY (Personal_ID) REFERENCES PERSON(Personal_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Dept_Id) REFERENCES DEPARTMENT(Dept_Id),
+    FOREIGN KEY (Supervisor_ID) REFERENCES EMPLOYEE(Personal_ID) -- Recursive SUPERVISION (1:N)
+);
+
+CREATE INDEX idx_employee_dept ON EMPLOYEE(Dept_Id);
+CREATE INDEX idx_employee_supervisor ON EMPLOYEE(Supervisor_ID);
+
+-- POTENTIAL EMPLOYEE (Subclass of PERSON)
+CREATE TABLE POTENTIAL_EMPLOYEE (
+    Personal_ID INT PRIMARY KEY,
+    FOREIGN KEY (Personal_ID) REFERENCES PERSON(Personal_ID) ON DELETE CASCADE
+);
+
+-- CUSTOMER (Subclass of PERSON)
+CREATE TABLE CUSTOMER (
+    Personal_ID INT PRIMARY KEY,
+    PrefSalesmen VARCHAR(255),
+    FOREIGN KEY (Personal_ID) REFERENCES PERSON(Personal_ID) ON DELETE CASCADE
+);
+
+
+-- ==========================================
+-- 3. MULTIVALUED ATTRIBUTES & COMPONENT ENTITIES
+-- ==========================================
+
+-- Multivalued Attribute: Salary (for EMPLOYEE)
+CREATE TABLE EMPLOYEE_SALARY (
+    TransactionNum INT,
+    Personal_ID INT,
+    PayDate DATE,
+    Amount DECIMAL(10, 2),
+    PRIMARY KEY (TransactionNum, Personal_ID),
+    FOREIGN KEY (Personal_ID) REFERENCES EMPLOYEE(Personal_ID) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_salary_emp ON EMPLOYEE_SALARY(Personal_ID);
+CREATE INDEX idx_salary_paydate ON EMPLOYEE_SALARY(PayDate);
+
+
+-- ==========================================
+-- 4. UNION CATEGORY & RECRUITMENT ENTITIES
+-- ==========================================
+
+-- CANDIDATE (Union Category of EMPLOYEE and POTENTIAL_EMPLOYEE)
+CREATE TABLE CANDIDATE (
+    CandidateID INT PRIMARY KEY,
+    Personal_ID INT NOT NULL UNIQUE,
+    FOREIGN KEY (Personal_ID) REFERENCES PERSON(Personal_ID) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_candidate_person ON CANDIDATE(Personal_ID);
+
+-- JOB POSITION
+CREATE TABLE JOB_POSITION (
+    JobID INT PRIMARY KEY,
+    Description TEXT,
+    PostedDate DATE,
+    Dept_Id INT NOT NULL,
+    FOREIGN KEY (Dept_Id) REFERENCES DEPARTMENT(Dept_Id) -- POSTS Relationship (1:N)
+);
+
+CREATE INDEX idx_job_dept ON JOB_POSITION(Dept_Id);
+CREATE INDEX idx_job_posted_date ON JOB_POSITION(PostedDate);
+
+-- INTERVIEW (Ternary Entity via DCI Relationship)
+CREATE TABLE INTERVIEW (
+    InterviewID INT PRIMARY KEY,
+    InterviewTime DATETIME,
+    Grade VARCHAR(10),
+    JobID INT NOT NULL,
+    CandidateID INT NOT NULL,
+    Dept_Id INT NOT NULL,
+    FOREIGN KEY (JobID) REFERENCES JOB_POSITION(JobID),
+    FOREIGN KEY (CandidateID) REFERENCES CANDIDATE(CandidateID),
+    FOREIGN KEY (Dept_Id) REFERENCES DEPARTMENT(Dept_Id)
+);
+
+CREATE INDEX idx_interview_job ON INTERVIEW(JobID);
+CREATE INDEX idx_interview_candidate ON INTERVIEW(CandidateID);
+CREATE INDEX idx_interview_dept ON INTERVIEW(Dept_Id);
+
+
+-- ==========================================
+-- 5. M:N RELATIONSHIP TABLES
+-- ==========================================
+
+-- INTERVIEWER (M:N between EMPLOYEE and INTERVIEW)
+CREATE TABLE INTERVIEWER (
+    Personal_ID INT,
+    InterviewID INT,
+    PRIMARY KEY (Personal_ID, InterviewID),
+    FOREIGN KEY (Personal_ID) REFERENCES EMPLOYEE(Personal_ID),
+    FOREIGN KEY (InterviewID) REFERENCES INTERVIEW(InterviewID)
+);
+
+CREATE INDEX idx_interviewer_interview ON INTERVIEWER(InterviewID);
+
+-- WORKS_ON (M:N between EMPLOYEE and MARKETING_SITE)
+CREATE TABLE WORKS_ON (
+    Personal_ID INT,
+    SiteID INT,
+    PRIMARY KEY (Personal_ID, SiteID),
+    FOREIGN KEY (Personal_ID) REFERENCES EMPLOYEE(Personal_ID),
+    FOREIGN KEY (SiteID) REFERENCES MARKETING_SITE(SiteID)
+);
+
+CREATE INDEX idx_works_on_site ON WORKS_ON(SiteID);
+
+-- SALE (M:N between CUSTOMER and MARKETING_SITE)
+CREATE TABLE SALE (
+    Personal_ID INT,
+    SiteID INT,
+    ProductID INT,
+    SaleTime DATETIME,
+    PRIMARY KEY (Personal_ID, SiteID, ProductID, SaleTime),
+    FOREIGN KEY (Personal_ID) REFERENCES CUSTOMER(Personal_ID),
+    FOREIGN KEY (SiteID) REFERENCES MARKETING_SITE(SiteID),
+    FOREIGN KEY (ProductID) REFERENCES PRODUCT(ProductID)
+);
+
+CREATE INDEX idx_sale_site ON SALE(SiteID);
+CREATE INDEX idx_sale_product ON SALE(ProductID);
+CREATE INDEX idx_sale_time ON SALE(SaleTime);
+
+-- INVENTORY (M:N between MARKETING_SITE and PRODUCT)
+CREATE TABLE INVENTORY (
+    SiteID INT,
+    ProductID INT,
+    PRIMARY KEY (SiteID, ProductID),
+    FOREIGN KEY (SiteID) REFERENCES MARKETING_SITE(SiteID),
+    FOREIGN KEY (ProductID) REFERENCES PRODUCT(ProductID)
+);
+
+CREATE INDEX idx_inventory_product ON INVENTORY(ProductID);
+
+-- SUPPLY (M:N between PART and VENDOR)
+CREATE TABLE SUPPLY (
+    VendorID_Part INT,
+    VendorID_Vendor INT,
+    PRIMARY KEY (VendorID_Part, VendorID_Vendor),
+    FOREIGN KEY (VendorID_Part) REFERENCES PART(VendorID),
+    FOREIGN KEY (VendorID_Vendor) REFERENCES VENDOR(VendorID)
+);
+
+CREATE INDEX idx_supply_vendor ON SUPPLY(VendorID_Vendor);
+
+-- PRODUCE (M:N between DEPARTMENT and PRODUCT)
+CREATE TABLE PRODUCE (
+    Dept_Id INT,
+    ProductID INT,
+    PRIMARY KEY (Dept_Id, ProductID),
+    FOREIGN KEY (Dept_Id) REFERENCES DEPARTMENT(Dept_Id),
+    FOREIGN KEY (ProductID) REFERENCES PRODUCT(ProductID)
+);
+
+CREATE INDEX idx_produce_product ON PRODUCE(ProductID);
+
+-- MANUFACTURE (M:N between PRODUCT and PART)
+CREATE TABLE MANUFACTURE (
+    ProductID INT,
+    VendorID_Part INT,
+    PRIMARY KEY (ProductID, VendorID_Part),
+    FOREIGN KEY (ProductID) REFERENCES PRODUCT(ProductID),
+    FOREIGN KEY (VendorID_Part) REFERENCES PART(VendorID)
+);
+
+CREATE INDEX idx_manufacture_part ON MANUFACTURE(VendorID_Part);
+
+-- BOM (Bill of Materials — Relationship between PRODUCT and PART)
+CREATE TABLE BOM (
+    ProductID INT,
+    VendorID_Part INT,
+    QuantityRequired INT,
+    PRIMARY KEY (ProductID, VendorID_Part),
+    FOREIGN KEY (ProductID) REFERENCES PRODUCT(ProductID),
+    FOREIGN KEY (VendorID_Part) REFERENCES PART(VendorID)
+);
+
+CREATE INDEX idx_bom_part ON BOM(VendorID_Part);

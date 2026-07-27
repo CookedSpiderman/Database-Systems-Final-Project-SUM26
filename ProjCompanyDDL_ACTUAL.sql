@@ -1,0 +1,139 @@
+show databases;
+use projcompany;
+
+CREATE TABLE PERSON (
+	PID				INT auto_increment PRIMARY KEY,
+	Fname			VARCHAR(50) 	NOT NULL,
+    Lname			VARCHAR(50) 	NOT NULL,
+    Age				INT				NOT NULL,
+    CONSTRAINT CHECK_AGE
+        CHECK (Age >= 18 AND Age < 65),
+    Gender			CHAR(1),
+    Address_2		VARCHAR(100),
+    Address_1		VARCHAR(100),
+    City			VARCHAR(50),
+    State			CHAR(2),
+    Zip				VARCHAR(10),
+    CellPhone		VARCHAR(15)		UNIQUE,
+    WorkPhone		VARCHAR(15)		UNIQUE,
+    Email			VARCHAR(100)
+);
+
+CREATE TABLE EMPLOYEE (
+	EmployeeID		INT 			PRIMARY KEY,
+		FOREIGN KEY (EmployeeID) REFERENCES PERSON(PID) ON DELETE CASCADE,
+	EmpRank			VARCHAR(50),
+    Title			VARCHAR(50),
+    Salary			DECIMAL(10, 2),
+    SuperID			INT,
+		FOREIGN KEY (SuperID) REFERENCES EMPLOYEE(EmployeeID) ON DELETE RESTRICT,
+    
+    CONSTRAINT CHECK_SUPERVISOR
+		CHECK (
+			SuperID is NULL
+            OR SuperID <> EmployeeID
+		)
+);
+
+CREATE TABLE CUSTOMER (
+	CustomerID			INT			PRIMARY KEY,
+		FOREIGN KEY (CustomerID) REFERENCES PERSON(PID) ON DELETE CASCADE
+    
+);
+
+CREATE TABLE POTENTIAL_EMPLOYEE (
+	ApplicantID				INT 			PRIMARY KEY,
+	JobID					INT,
+		FOREIGN KEY (ApplicantID) REFERENCES PERSON(PID) ON DELETE CASCADE
+    
+);
+
+CREATE TABLE DEPARTMENT (
+	DepartmentID			INT				PRIMARY KEY,
+    DepName					VARCHAR(100)	NOT NULL,
+    ManagerID				INT,
+		FOREIGN KEY (ManagerID) REFERENCES EMPLOYEE(EmployeeID) ON DELETE SET NULL,
+    CONSTRAINT UNIQUE_DEP
+		UNIQUE (DepName)
+);
+
+CREATE TABLE WORKS_FOR (
+	EmployeeID			INT NOT NULL,
+		FOREIGN KEY (EmployeeID) REFERENCES EMPLOYEE(EmployeeID) ON DELETE CASCADE,
+    DepartmentID		INT NOT NULL,
+		FOREIGN KEY (DepartmentID) REFERENCES DEPARTMENT(DepartmentID) ON DELETE RESTRICT,
+    StartTime			DATETIME NOT NULL,
+    EndTime 			DATETIME,
+    
+-- check times  
+    CONSTRAINT CHECK_TIME
+		CHECK (
+			EndTime IS NULL
+			OR EndTime > StartTime
+		)
+);
+
+CREATE TABLE PREFERED (
+	CustomerID			INT NOT NULL,
+		FOREIGN KEY (CustomerID) REFERENCES CUSTOMER(CustomerID) ON DELETE CASCADE,
+	EmployeeID			INT NOT NULL,
+		FOREIGN KEY (EmployeeID) REFERENCES EMPLOYEE(EmployeeID) ON DELETE CASCADE,
+	
+    CONSTRAINT PREFREP
+		PRIMARY KEY (CustomerID, EmployeeID)
+        
+);
+
+CREATE TABLE JOB_POSITION (
+	JobID			INT,
+    JobDesc			VARCHAR(250) NOT NULL,
+    PostDate		DATE NOT NULL,
+    DepartmentID	INT NOT NULL,
+		FOREIGN KEY (DepartmentID) REFERENCES DEPARTMENT(DepartmentID) ON DELETE RESTRICT,
+    CONSTRAINT PrimaryKeyJob
+		PRIMARY KEY(JobID)
+        
+);
+
+CREATE TABLE CANDIDATE (
+	CandidateID			INT NOT NULL,
+		FOREIGN KEY (CandidateID) REFERENCES PERSON(PID) ON DELETE CASCADE,
+    JobID				INT,
+		FOREIGN KEY (JobID) REFERENCES JOB_POSITION(JobID) ON DELETE CASCADE,
+    
+    CONSTRAINT PK_CANDIDATE
+		PRIMARY KEY (CandidateID, JobID)
+	
+);
+
+CREATE TABLE INTERVIEW (
+	InterviewID			INT AUTO_INCREMENT,
+    CandidateID			INT NOT NULL,
+    JobID				INT NOT NULL,
+		FOREIGN KEY (CandidateID, JobID)
+        REFERENCES CANDIDATE(CandidateID, JobID) ON DELETE CASCADE,
+    InterviewDate		DATE NOT NULL,
+    InterviewTime		TIME NOT NULL,
+    Stage				VARCHAR(50),
+    Grade 				VARCHAR(10),
+    
+CONSTRAINT PK_INTERVIEW
+	PRIMARY KEY (InterviewID),
+    
+CONSTRAINT UNIQUE_ROUND
+	UNIQUE(CandidateID, JobID, InterviewRound)
+    
+);
+
+
+    
+CREATE TABLE DCI (
+	IntervieweeID		
+	InterviewRound		INT NOT NULL
+    
+);
+
+	
+
+
+
