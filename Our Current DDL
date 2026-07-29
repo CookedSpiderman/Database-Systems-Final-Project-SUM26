@@ -2,138 +2,315 @@ show databases;
 use projcompany;
 
 CREATE TABLE PERSON (
-	PID				INT auto_increment PRIMARY KEY,
-	Fname			VARCHAR(50) 	NOT NULL,
-    Lname			VARCHAR(50) 	NOT NULL,
-    Age				INT				NOT NULL,
-    CONSTRAINT CHECK_AGE
-        CHECK (Age >= 18 AND Age < 65),
-    Gender			CHAR(1),
-    Address_2		VARCHAR(100),
-    Address_1		VARCHAR(100),
-    City			VARCHAR(50),
-    State			CHAR(2),
-    Zip				VARCHAR(10),
-    CellPhone		VARCHAR(15)		UNIQUE,
-    WorkPhone		VARCHAR(15)		UNIQUE,
-    Email			VARCHAR(100)
+    PID        INT AUTO_INCREMENT PRIMARY KEY,
+    Fname      VARCHAR(50)  NOT NULL,
+    Lname      VARCHAR(50)  NOT NULL,
+    Age        INT          NOT NULL,
+    Gender     ENUM('Male', 'Female', 'Other') NOT NULL,
+    AddrLine1  VARCHAR(150) NOT NULL,
+    AddrLine2  VARCHAR(150),
+    Email      VARCHAR(120) NOT NULL UNIQUE,
+    
+    CONSTRAINT CHECK_AGE 
+		CHECK (Age BETWEEN 18 AND 64)
+);
+
+CREATE TABLE PHONENUMS (
+    PID          INT,
+    PhoneNumber  VARCHAR(25),
+    PhoneType    ENUM('Cell', 'Home', 'Work', 'Other') NOT NULL,
+
+    CONSTRAINT PK_PHONENUMS 
+		PRIMARY KEY (PID, PhoneNumber),
+        
+    CONSTRAINT FK_PERSON_PHONE_PERSON
+        FOREIGN KEY (PID) REFERENCES PERSON(PID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
 );
 
 CREATE TABLE EMPLOYEE (
-	EmployeeID		INT 			PRIMARY KEY,
-		FOREIGN KEY (EmployeeID) REFERENCES PERSON(PID) ON DELETE CASCADE,
-	EmpRank			VARCHAR(50),
-    Title			VARCHAR(50),
-    Salary			DECIMAL(10, 2),
-    SuperID			INT,
-		FOREIGN KEY (SuperID) REFERENCES EMPLOYEE(EmployeeID) ON DELETE RESTRICT,
-    
-    CONSTRAINT CHECK_SUPERVISOR
-		CHECK (
-			SuperID is NULL
-            OR SuperID <> EmployeeID
-		)
+    EID        INT,
+    EmpRank    VARCHAR(50)  NOT NULL,
+    Title      VARCHAR(100) NOT NULL,
+    Salary     DECIMAL(10,2) NOT NULL,
+    SuperSSN   INT,
+
+    PRIMARY KEY (EID),
+    FOREIGN KEY (EID) REFERENCES PERSON(PID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    FOREIGN KEY (SuperSSN) REFERENCES EMPLOYEE(EID)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+    CONSTRAINT CHECK_SALARY 
+		CHECK (Salary >= 0)
 );
 
 CREATE TABLE CUSTOMER (
-	CustomerID			INT			PRIMARY KEY,
-		FOREIGN KEY (CustomerID) REFERENCES PERSON(PID) ON DELETE CASCADE
-    
+    CustomerID INT,
+
+    PRIMARY KEY (CustomerID),
+    FOREIGN KEY (CustomerID) REFERENCES PERSON(PID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
 );
 
 CREATE TABLE POTENTIAL_EMPLOYEE (
-	ApplicantID				INT 			PRIMARY KEY,
-	JobID					INT,
-		FOREIGN KEY (ApplicantID) REFERENCES PERSON(PID) ON DELETE CASCADE
-    
+    ApplicantID INT,
+
+    PRIMARY KEY (ApplicantID),
+    FOREIGN KEY (ApplicantID) REFERENCES PERSON(PID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
 );
 
 CREATE TABLE DEPARTMENT (
-	DepartmentID			INT				PRIMARY KEY,
-    DepName					VARCHAR(100)	NOT NULL,
-    ManagerID				INT,
-		FOREIGN KEY (ManagerID) REFERENCES EMPLOYEE(EmployeeID) ON DELETE SET NULL,
-    CONSTRAINT UNIQUE_DEP
-		UNIQUE (DepName)
+    DepID    INT AUTO_INCREMENT,
+    DepName  VARCHAR(100) NOT NULL,
+    MgrID    INT NOT NULL,
+
+    CONSTRAINT PK_DEPARTMENT PRIMARY KEY (DepID),
+    CONSTRAINT UQ_DEPARTMENT_NAME UNIQUE (DepName),
+    CONSTRAINT FK_DEPARTMENT_MANAGER
+        FOREIGN KEY (MgrID) REFERENCES EMPLOYEE(EID)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
 );
 
 CREATE TABLE WORKS_FOR (
-	EmployeeID			INT NOT NULL,
-		FOREIGN KEY (EmployeeID) REFERENCES EMPLOYEE(EmployeeID) ON DELETE CASCADE,
-    DepartmentID		INT NOT NULL,
-		FOREIGN KEY (DepartmentID) REFERENCES DEPARTMENT(DepartmentID) ON DELETE RESTRICT,
-    StartTime			DATETIME NOT NULL,
-    EndTime 			DATETIME,
-    
--- check times  
-    CONSTRAINT CHECK_TIME
-		CHECK (
-			EndTime IS NULL
-			OR EndTime > StartTime
-		)
+    D_ID       INT,
+    E_ID       INT,
+    StartDate  DATETIME,
+    EndDate    DATETIME,
+
+    PRIMARY KEY (D_ID, E_ID, StartDate),
+    FOREIGN KEY (D_ID) REFERENCES DEPARTMENT(DepID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    FOREIGN KEY (E_ID) REFERENCES EMPLOYEE(EID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT CK_WORKS_FOR_DATES
+        CHECK (EndDate >= StartDate)
 );
 
-CREATE TABLE PREFERED (
-	CustomerID			INT NOT NULL,
-		FOREIGN KEY (CustomerID) REFERENCES CUSTOMER(CustomerID) ON DELETE CASCADE,
-	EmployeeID			INT NOT NULL,
-		FOREIGN KEY (EmployeeID) REFERENCES EMPLOYEE(EmployeeID) ON DELETE CASCADE,
-	
-    CONSTRAINT PREFREP
-		PRIMARY KEY (CustomerID, EmployeeID)
-        
+CREATE TABLE PREFERRED (
+    CustomerID  INT,
+    PrefRepID   INT,
+
+    PRIMARY KEY (CustomerID, PrefRepID),
+    FOREIGN KEY (CustomerID) REFERENCES CUSTOMER(CustomerID) ON UPDATE CASCADE ON DELETE CASCADE,
+	FOREIGN KEY (PrefRepID) REFERENCES EMPLOYEE(EID) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE JOB_POSITION (
-	JobID			INT,
-    JobDesc			VARCHAR(250) NOT NULL,
-    PostDate		DATE NOT NULL,
-    DepartmentID	INT NOT NULL,
-		FOREIGN KEY (DepartmentID) REFERENCES DEPARTMENT(DepartmentID) ON DELETE RESTRICT,
-    CONSTRAINT PrimaryKeyJob
-		PRIMARY KEY(JobID)
-        
+    JobID     INT AUTO_INCREMENT,
+    JobDesc   VARCHAR(255) NOT NULL,
+    PostDate  DATE NOT NULL,
+    DepID     INT NOT NULL,
+
+    PRIMARY KEY (JobID),
+	FOREIGN KEY (DepID) REFERENCES DEPARTMENT(DepID) ON DELETE RESTRICT
 );
 
 CREATE TABLE CANDIDATE (
-	CandidateID			INT NOT NULL,
-		FOREIGN KEY (CandidateID) REFERENCES PERSON(PID) ON DELETE CASCADE,
-    JobID				INT,
-		FOREIGN KEY (JobID) REFERENCES JOB_POSITION(JobID) ON DELETE CASCADE,
+    CandidateID   	INT,
+    JobID   		INT NOT NULL,
+    PotID  		INT,
+    EmpID  		INT,
     
-    CONSTRAINT PK_CANDIDATE
-		PRIMARY KEY (CandidateID, JobID)
-	
+    PRIMARY KEY (CandidateID),
+    FOREIGN KEY (CandidateID) REFERENCES PERSON(PID),
+    FOREIGN KEY (JobID) REFERENCES JOB_POSITION(JobID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    FOREIGN KEY (PotID) REFERENCES POTENTIAL_EMPLOYEE(ApplicantID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    FOREIGN KEY (EmpID) REFERENCES EMPLOYEE(EID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
 );
 
 CREATE TABLE INTERVIEW (
-	InterviewID			INT AUTO_INCREMENT,
-    CandidateID			INT NOT NULL,
-    JobID				INT NOT NULL,
-		FOREIGN KEY (CandidateID, JobID)
-        REFERENCES CANDIDATE(CandidateID, JobID) ON DELETE CASCADE,
-    InterviewDate		DATE NOT NULL,
-    InterviewTime		TIME NOT NULL,
-    Stage				VARCHAR(50),
-    Grade 				VARCHAR(10),
-    
-CONSTRAINT PK_INTERVIEW
-	PRIMARY KEY (InterviewID),
-    
-CONSTRAINT UNIQUE_ROUND
-	UNIQUE(CandidateID, JobID, InterviewRound)
-    
+    InterviewID  INT AUTO_INCREMENT,
+    IntDate      DATE NOT NULL,
+    IntTime      TIME NOT NULL,
+    Stage        VARCHAR(50) NOT NULL,
+
+    PRIMARY KEY (InterviewID)
 );
 
-
-    
+-- Connects a candidate's job application to each interview round.
 CREATE TABLE DCI (
-	IntervieweeID		
-	InterviewRound		INT NOT NULL
-    
+    JobID        INT,
+    Interviewee  INT,
+    InterviewID  INT,
+    Int_Avg      DECIMAL(5,2) NOT NULL,
+
+    PRIMARY KEY (JobID, Interviewee, InterviewID),
+	FOREIGN KEY (JobID) REFERENCES JOB_POSITION(JobID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    FOREIGN KEY (Interviewee) REFERENCES CANDIDATE(CandidateID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    FOREIGN KEY (InterviewID) REFERENCES INTERVIEW(InterviewID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    CHECK (Int_Avg BETWEEN 0 AND 100)
 );
 
-	
+CREATE TABLE INTERVIEWER (
+    InterviewID  INT,
+    Interviewer  INT,
+    Grade        DECIMAL(5,2) NOT NULL,
 
+    PRIMARY KEY (InterviewID, Interviewer),
+    FOREIGN KEY (InterviewID) REFERENCES INTERVIEW(InterviewID) ON UPDATE CASCADE ON DELETE CASCADE,
+	FOREIGN KEY (Interviewer) REFERENCES EMPLOYEE(EID) ON UPDATE CASCADE ON DELETE CASCADE,
+    CHECK (Grade BETWEEN 0 AND 100)
+);
 
+CREATE TABLE MARKETING_SITE (
+    SiteID    INT AUTO_INCREMENT,
+    SiteName  VARCHAR(100) NOT NULL UNIQUE,
+    Location  VARCHAR(200) NOT NULL,
 
+    PRIMARY KEY (SiteID)
+);
+
+CREATE TABLE WORKS_AT (
+    E_ID         INT,
+    Site_ID      INT,
+    ShiftNo      INT,
+    ShiftStart   DATETIME NOT NULL,
+    ShiftEnd     DATETIME NOT NULL,
+
+    PRIMARY KEY (E_ID, Site_ID, ShiftNo),
+	FOREIGN KEY (E_ID) REFERENCES EMPLOYEE(EID) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (Site_ID) REFERENCES MARKETING_SITE(SiteID) ON UPDATE CASCADE ON DELETE CASCADE,
+    CHECK (ShiftEnd >= ShiftStart)
+);
+
+CREATE TABLE PRODUCT (
+    ProductID  INT AUTO_INCREMENT,
+    Weight     DECIMAL(8,2) NOT NULL,
+    Style      VARCHAR(100) NOT NULL,
+    ListPrice  DECIMAL(10,2) NOT NULL,
+    Size       VARCHAR(50) NOT NULL,
+    ProdType   VARCHAR(100) NOT NULL,
+
+    PRIMARY KEY (ProductID),
+    CHECK (Weight > 0),
+    CHECK (ListPrice >= 0)
+);
+
+CREATE TABLE PRODUCTS_IN_SITE (
+    SiteID       INT,
+    ProductID    INT,
+    Quantity     INT NOT NULL,
+
+    PRIMARY KEY (SiteID, ProductID),
+	FOREIGN KEY (SiteID) REFERENCES MARKETING_SITE(SiteID) ON UPDATE CASCADE ON DELETE CASCADE,
+	FOREIGN KEY (ProductID) REFERENCES PRODUCT(ProductID) ON UPDATE CASCADE ON DELETE CASCADE,
+    CHECK (Quantity >= 0)
+);
+
+CREATE TABLE SALES (
+    SalesID       INT AUTO_INCREMENT,
+    SaleTime     DATETIME NOT NULL,
+    CustomerID   INT NOT NULL,
+    SiteID       INT NOT NULL,
+    SalesPrice    DECIMAL(10,2) NOT NULL,
+    TotalQtySold INT NOT NULL,
+
+	PRIMARY KEY (SalesID),
+	FOREIGN KEY (CustomerID) REFERENCES CUSTOMER(CustomerID) ON UPDATE CASCADE ON DELETE RESTRICT,
+	FOREIGN KEY (SiteID) REFERENCES MARKETING_SITE(SiteID) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CHECK (SalesPrice >= 0),
+    CHECK (TotalQtySold > 0)
+);
+
+CREATE TABLE PRODUCTS_IN_SALE (
+    SalesID    INT,
+    ProductID  INT,
+    QtySold    INT NOT NULL,
+
+    PRIMARY KEY (SalesID, ProductID),
+    FOREIGN KEY (SalesID)REFERENCES SALES(SalesID),
+    FOREIGN KEY (ProductID) REFERENCES PRODUCT(ProductID),
+    CHECK (QtySold > 0)
+);
+
+CREATE TABLE PARTS (
+    PartID    INT AUTO_INCREMENT,
+    PartType  VARCHAR(100) NOT NULL,
+    Price     DECIMAL(10,2) NOT NULL,
+    Stock     INT NOT NULL,
+
+    PRIMARY KEY (PartID),
+    CHECK (Price >= 0),
+    CHECK (Stock >= 0)
+);
+
+CREATE TABLE PRODUCE (
+    DepID     INT,
+    ProductID INT,
+    PartID    INT,
+    QtyUsed   INT NOT NULL,
+
+    PRIMARY KEY (DepID, ProductID, PartID),
+    FOREIGN KEY (DepID) REFERENCES DEPARTMENT(DepID),
+    FOREIGN KEY (ProductID) REFERENCES PRODUCT(ProductID),
+    FOREIGN KEY (PartID) REFERENCES PARTS(PartID),
+    CHECK (QtyUsed > 0)
+);
+
+CREATE TABLE VENDOR (
+    VendorID     	INT AUTO_INCREMENT,
+    VendorName    	VARCHAR(120) NOT NULL,
+    VendorAddress 	VARCHAR(200) NOT NULL,
+    URL     		VARCHAR(255),
+    AcctNo     		VARCHAR(60) NOT NULL,
+    CreditRating  	DECIMAL(5,2) NOT NULL,
+
+    PRIMARY KEY (VendorID),
+    UNIQUE (AcctNo),
+    CHECK (CreditRating BETWEEN 0 AND 100)
+);
+
+CREATE TABLE SUPPLY (
+    VendorID  INT,
+    PartID    INT,
+    QtySent   INT NOT NULL,
+    Price     DECIMAL(10,2) NOT NULL,
+
+    PRIMARY KEY (VendorID, PartID),
+    FOREIGN KEY (VendorID) REFERENCES VENDOR(VendorID) ON DELETE CASCADE,
+	FOREIGN KEY (PartID) REFERENCES PARTS(PartID) ON DELETE CASCADE,
+    CHECK (QtySent > 0),
+    CHECK (Price >= 0)
+);
+
+CREATE TABLE PAYROLL (
+    TransactionID      	INT AUTO_INCREMENT,
+    PayDate        		DATE NOT NULL,
+    Amount         		DECIMAL(10,2) NOT NULL,
+    TransactionNo  		INT NOT NULL,
+
+	PRIMARY KEY (TransactionID),
+    CHECK (Amount >= 0)
+);
+
+CREATE TABLE `TRANSACTION` (
+    E_ID           		INT,
+    TransactionID      	INT,
+    TransactionNo  		INT NOT NULL,
+
+    PRIMARY KEY (E_ID, TransactionID),
+    UNIQUE (E_ID, TransactionNo),
+	FOREIGN KEY (E_ID) REFERENCES EMPLOYEE(EID) ON DELETE CASCADE,
+	FOREIGN KEY (TransactionID) REFERENCES PAYROLL(TransactionID) ON DELETE CASCADE
+);
