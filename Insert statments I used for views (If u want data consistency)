@@ -1,0 +1,185 @@
+-- INSERT STATMENTS FOR DATA INTEGRITY:
+
+INSERT INTO PERSON
+    (PID, Fname, Lname, Age, Gender, AddrLine1, AddrLine2, Email)
+VALUES
+    (9001, 'Steve', 'Johnson', 35, 'Male',
+     '101 Main Street', NULL, 'steve.johnson9001@company.com'),
+    (9002, 'Maria', 'Lopez', 31, 'Female',
+     '102 Main Street', NULL, 'maria.lopez9002@company.com'),
+    (9003, 'David', 'Brown', 40, 'Male',
+     '103 Main Street', NULL, 'david.brown9003@email.com'),
+    (9004, 'Ashley', 'Davis', 25, 'Female',
+     '104 Main Street', NULL, 'ashley.davis9004@email.com'),
+    (9005, 'Michael', 'Wilson', 28, 'Male',
+     '105 Main Street', NULL, 'michael.wilson9005@email.com');
+	
+INSERT INTO EMPLOYEE
+    (EID, EmpRank, Title, Salary, SuperSSN)
+VALUES
+    (9001, 'Senior', 'Operations Manager', 84000.00, NULL),
+    (9002, 'Associate', 'Sales Representative', 60000.00, 9001);
+    
+INSERT INTO DEPARTMENT
+    (DepID, DepName, MgrID)
+VALUES
+    (9101, 'Operations', 9001),
+    (9102, 'Sales', 9002);
+    
+INSERT INTO WORKS_FOR
+    (D_ID, E_ID, StartDate, EndDate)
+VALUES
+    (9101, 9001, '2025-01-01 08:00:00', NULL),
+    (9102, 9002, '2025-02-01 08:00:00', NULL);
+
+INSERT INTO PAYROLL
+    (TransactionID, PayDate, Amount, TransactionNo)
+VALUES
+    (9201, '2025-01-15', 3500.00, 10001),
+    (9202, '2025-01-31', 3500.00, 10002),
+
+    (9203, '2025-02-15', 3500.00, 10003),
+    (9204, '2025-02-28', 3500.00, 10004),
+
+    (9205, '2025-03-15', 3750.00, 10005),
+    (9206, '2025-03-31', 3750.00, 10006);
+    
+INSERT INTO `TRANSACTION`
+    (E_ID, TransactionID, TransactionNo)
+VALUES
+    (9001, 9201, 10001),
+    (9001, 9202, 10002),
+    (9001, 9203, 10003),
+    (9001, 9204, 10004),
+    (9001, 9205, 10005),
+    (9001, 9206, 10006);
+    
+INSERT INTO PAYROLL
+    (TransactionID, PayDate, Amount, TransactionNo)
+VALUES
+    (9211, '2025-02-15', 2500.00, 11001),
+    (9212, '2025-02-28', 2500.00, 11002),
+
+    (9213, '2025-03-15', 2500.00, 11003),
+    (9214, '2025-03-31', 2500.00, 11004),
+
+    (9215, '2025-04-15', 2750.00, 11005),
+    (9216, '2025-04-30', 2750.00, 11006);
+    
+INSERT INTO `TRANSACTION`
+    (E_ID, TransactionID, TransactionNo)
+VALUES
+    (9002, 9211, 11001),
+    (9002, 9212, 11002),
+    (9002, 9213, 11003),
+    (9002, 9214, 11004),
+    (9002, 9215, 11005),
+    (9002, 9216, 11006);
+    
+INSERT INTO POTENTIAL_EMPLOYEE
+    (ApplicantID)
+VALUES
+    (9004),
+    (9005);
+    
+INSERT INTO JOB_POSITION
+    (JobID, JobDesc, PostDate, DepID)
+VALUES
+    (9301, 'Database Developer', '2025-05-01', 9101),
+    (9302, 'Sales Analyst', '2025-05-02', 9102);
+    
+INSERT INTO CANDIDATE
+    (CandidateID, JobID, PotID, EmpID)
+VALUES
+    (9004, 9301, 9004, NULL),
+    (9005, 9302, 9005, NULL);
+    
+INSERT INTO INTERVIEW
+    (InterviewID, IntDate, IntTime, Stage)
+VALUES
+    (9401, '2025-05-10', '09:00:00', 'Phone Screening'),
+    (9402, '2025-05-15', '10:00:00', 'Technical Interview'),
+    (9403, '2025-05-20', '11:00:00', 'Final Interview'),
+
+    (9404, '2025-05-12', '13:00:00', 'Phone Screening'),
+    (9405, '2025-05-18', '14:00:00', 'Final Interview');
+    
+INSERT INTO DCI
+    (JobID, Interviewee, InterviewID, Int_Avg)
+VALUES
+    (9301, 9004, 9401, 85.00),
+    (9301, 9004, 9402, 90.00),
+    (9301, 9004, 9403, 92.00);
+    
+INSERT INTO DCI
+    (JobID, Interviewee, InterviewID, Int_Avg)
+VALUES
+    (9302, 9005, 9404, 78.00),
+    (9302, 9005, 9405, 84.00);
+    
+INSERT INTO CUSTOMER
+    (CustomerID)
+VALUES
+    (9003);
+    
+INSERT INTO MARKETING_SITE
+    (SiteID, SiteName, Location)
+VALUES
+    (9501, 'Dallas Main Store', 'Dallas, Texas');
+    
+INSERT INTO PRODUCT
+    (ProductID, Weight, Style, ListPrice, Size, ProdType)
+VALUES
+    (9601, 12.50, 'Modern', 199.99, 'Medium', 'Chair'),
+    (9602, 15.00, 'Classic', 249.99, 'Large', 'Chair'),
+    (9603, 40.00, 'Modern', 499.99, 'Large', 'Table'),
+    (9604, 65.00, 'Executive', 799.99, 'Large', 'Desk');
+    
+INSERT INTO SALES
+    (SalesID, SaleTime, CustomerID, SiteID, SalesPrice, TotalQtySold)
+VALUES
+    (9701, '2025-06-01 10:30:00', 9003, 9501, 899.96, 5),
+    (9702, '2025-06-03 14:15:00', 9003, 9501, 1299.97, 4);
+    
+INSERT INTO PRODUCTS_IN_SALE
+    (SalesID, ProductID, QtySold)
+VALUES
+    (9701, 9601, 3),
+    (9701, 9602, 2),
+
+    (9702, 9601, 1),
+    (9702, 9603, 2),
+    (9702, 9604, 1);
+    
+INSERT INTO PARTS
+    (PartID, PartType, Price, Stock)
+VALUES
+    (9801, 'Wood Panel', 40.00, 100),
+    (9802, 'Metal Leg', 12.00, 200),
+    (9803, 'Screw', 0.25, 1000),
+    (9804, 'Cushion', 18.00, 100),
+    (9805, 'Drawer Assembly', 35.00, 75);
+    
+INSERT INTO PRODUCE
+    (DepID, ProductID, PartID, QtyUsed)
+VALUES
+    -- Modern chair
+    (9101, 9601, 9802, 4),
+    (9101, 9601, 9803, 12),
+    (9101, 9601, 9804, 1),
+
+    -- Classic chair
+    (9101, 9602, 9802, 4),
+    (9101, 9602, 9803, 16),
+    (9101, 9602, 9804, 2),
+
+    -- Table
+    (9101, 9603, 9801, 1),
+    (9101, 9603, 9802, 4),
+    (9101, 9603, 9803, 20),
+
+    -- Desk
+    (9101, 9604, 9801, 2),
+    (9101, 9604, 9802, 4),
+    (9101, 9604, 9803, 24),
+    (9101, 9604, 9805, 3);
