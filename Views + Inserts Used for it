@@ -183,3 +183,67 @@ VALUES
     (9101, 9604, 9802, 4),
     (9101, 9604, 9803, 24),
     (9101, 9604, 9805, 3);
+
+
+-- VIEW 1: -----------------------------------------------------------------------------------------------------------    
+
+CREATE OR REPLACE VIEW Monthly_Avg_Since_Join AS
+SELECT
+    e.EID,
+    CONCAT(p.Fname, ' ', p.Lname) AS EmployeeName,
+    e.Salary AS AnnualSalary,
+    ROUND(e.Salary / 12, 2) AS AverageMonthlySalary
+FROM EMPLOYEE e
+JOIN PERSON p
+    ON p.PID = e.EID;
+    
+Select * From Monthly_Avg_Since_Join;
+
+-- VIEW 2: ------------------------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE VIEW Job_Int_Rounds AS
+SELECT
+    c.CandidateID, p.Fname, p.Lname, jp.JobID, jp.JobDesc AS Job,
+    COUNT(DISTINCT d.InterviewID) AS InterviewRounds
+FROM CANDIDATE c
+JOIN PERSON p
+    ON p.PID = c.CandidateID
+JOIN JOB_POSITION jp
+    ON jp.JobID = c.JobID
+JOIN DCI d
+    ON d.Interviewee = c.CandidateID
+   AND d.JobID = jp.JobID
+GROUP BY
+    c.CandidateID, p.Fname, p.Lname, jp.JobID, jp.JobDesc;
+    
+Select * from Job_Int_Rounds;
+
+-- VIEW 3: ---------------------------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE VIEW Sold_Items AS
+SELECT
+    p.ProdType,
+    SUM(PIS.QtySold) AS NumberOfItemsSold
+FROM PRODUCT p
+JOIN PRODUCTS_IN_SALE PIS
+    ON PIS.ProductID = p.ProductID
+GROUP BY
+    p.ProdType;
+    
+Select * from Sold_Items;
+
+-- VIEW 4: ----------------------------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE VIEW Part_Purchase_Cost AS
+SELECT
+p.ProductID, p.ProdType, p.Style, p.Size,
+    ROUND(SUM(pr.QtyUsed * part.Price),1) AS PartCost
+FROM PRODUCT p
+JOIN PRODUCE pr
+    ON pr.ProductID = p.ProductID
+JOIN PARTS part
+    ON part.PartID = pr.PartID
+GROUP BY
+    p.ProductID, p.ProdType, p.Style, p.Size;
+    
+SELECT * FROM Part_Purchase_Cost;
