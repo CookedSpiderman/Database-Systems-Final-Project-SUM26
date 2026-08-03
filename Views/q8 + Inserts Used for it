@@ -1,5 +1,4 @@
--- INSERT STATMENTS FOR DATA INTEGRITY:
-
+-- INSERT STATMENTS FOR DATA INTEGRITY: 
 INSERT INTO PERSON
     (PID, Fname, Lname, Age, Gender, AddrLine1, AddrLine2, Email)
 VALUES
@@ -183,8 +182,7 @@ VALUES
     (9101, 9604, 9802, 4),
     (9101, 9604, 9803, 24),
     (9101, 9604, 9805, 3);
-
-
+    
 -- VIEW 1: -----------------------------------------------------------------------------------------------------------    
 
 CREATE OR REPLACE VIEW Monthly_Avg_Since_Join AS
@@ -247,3 +245,22 @@ GROUP BY
     p.ProductID, p.ProdType, p.Style, p.Size;
     
 SELECT * FROM Part_Purchase_Cost;
+
+-- QUERY 8: -----------------------------------------------------------------------------------------------------------------
+
+SELECT DISTINCT
+    e.EID AS EmployeeID,
+    p.Fname AS 'First Name',
+    p.Lname AS 'Last Name',
+    wf.D_ID AS DepartmentID,
+    c.JobID AS JobID
+FROM CANDIDATE c
+JOIN EMPLOYEE e
+    ON c.EmpID = e.EID
+JOIN PERSON p
+    ON e.EID = p.PID
+JOIN WORKS_FOR wf
+    ON e.EID = wf.E_ID
+WHERE c.JobID = 12345;
+
+SELECT * FROM CANDIDATE;
